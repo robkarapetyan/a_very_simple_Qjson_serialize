@@ -1,0 +1,67 @@
+#include "parser.h"
+
+Parser::Parser()
+{
+
+}
+
+bool Parser::deserialize(SaveFormat saveFormat)
+{
+    QFile loadFile(saveFormat == SaveFormat::Json
+        ? QStringLiteral("save.json")
+        : QStringLiteral("save.dat"));
+
+    if (!loadFile.open(QIODevice::ReadOnly)) {
+        qWarning("Couldn't open save file.");
+        return false;
+    }
+
+    QByteArray saveData = loadFile.readAll();
+
+    QJsonDocument loadDoc(saveFormat == SaveFormat::Json
+        ? QJsonDocument::fromJson(saveData)
+        : QJsonDocument::fromBinaryData(saveData));
+
+    if (loadDoc.object().contains("name") && loadDoc.object()["name"].isString())
+        _name = loadDoc.object()["name"].toString();
+    if (loadDoc.object().contains("age") && loadDoc.object()["age"].isDouble())
+        _age = loadDoc.object()["age"].toDouble();
+
+    return true;
+}
+
+bool Parser::serialize(SaveFormat saveFormat) const
+{
+    QFile saveFile(saveFormat == SaveFormat::Json
+        ? QStringLiteral("save.json")
+        : QStringLiteral("save.dat"));
+
+    if (!saveFile.open(QIODevice::WriteOnly)) {
+        qWarning("Couldn't open save file.");
+        return false;
+    }
+
+    QJsonObject testObject;
+
+    testObject["name"] = _name;
+    testObject["age"] = _age;
+
+
+    QJsonDocument saveDoc(testObject);
+    saveFile.write(saveFormat == SaveFormat::Json
+        ? saveDoc.toJson()
+        : saveDoc.toBinaryData());
+
+    return true;
+}
+
+void Parser::setData(const QString &name, int age)
+{
+    _name = name;
+    _age = age;
+}
+
+void Parser::print()
+{
+    qDebug() << _name << _age;
+}
